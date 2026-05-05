@@ -3,10 +3,10 @@
 #include <limits.h>
 #include <string.h>
 
-#define QTD_VERTICES 20 // Limite seguro para os testes do vídeo
+#define QTD_VERTICES 20 
 
 // =========================================================
-// [LETRA A]: DEFINIÇÃO DA ESTRUTURA DE REPRESENTAÇÃO
+// [LETRA A]: DEFINIÇÃO DAS ESTRUTURAS
 // =========================================================
 
 typedef struct noh {
@@ -24,6 +24,30 @@ typedef struct {
     int matriz[QTD_VERTICES][QTD_VERTICES]; // Representação por Matriz
     int num_vertices; 
 } GrafoMatriz;
+
+// =========================================================
+// [LETRA C]: SALVAR MATRIZ (ESTRUTURADA EM LINHAS E COLUNAS)
+// =========================================================
+// Esta função grava a matriz no arquivo .txt respeitando o formato
+// visual de tabela solicitado na imagem do enunciado.
+void salvarMatrizFormato(GrafoMatriz *g) {
+    FILE *f_mat = fopen("matriz_adjacencia.txt", "w");
+    if (!f_mat) return;
+    
+    for (int i = 0; i < g->num_vertices; i++) {
+        for (int j = 0; j < g->num_vertices; j++) {
+            // Salva o peso e um espaço
+            fprintf(f_mat, "%d ", g->matriz[i][j]);
+        }
+        // AO FINAL DE CADA LINHA: Pula para a próxima no arquivo
+        fprintf(f_mat, "\n"); 
+    }
+    fclose(f_mat);
+}
+
+// =========================================================
+// FUNÇÕES DE INICIALIZAÇÃO E APOIO
+// =========================================================
 
 GrafoLista* inicializarGrafoLista(int n) {
     GrafoLista *G = (GrafoLista*)malloc(sizeof(GrafoLista));
@@ -51,7 +75,6 @@ void adicionarArestaLista(GrafoLista *G, int v1, int v2, int peso) {
 // =========================================================
 // [LETRA D]: CÁLCULO DO GRAU DOS VÉRTICES
 // =========================================================
-
 void exibirGraus(GrafoMatriz *g, char tipo, int v) {
     printf("\n--- [LETRA D] GRAU DO VERTICE %d ---", v);
     int entrada = 0, saida = 0;
@@ -68,7 +91,6 @@ void exibirGraus(GrafoMatriz *g, char tipo, int v) {
 // =========================================================
 // [LETRA E]: AGM PRIM
 // =========================================================
-
 void primAGM(GrafoMatriz *g, char tipo, int valorado) {
     printf("\n--- [LETRA E] ARVORE GERADORA MINIMA (PRIM) ---");
     if (tipo == 'D' || tipo == 'd' || valorado == 0) {
@@ -97,7 +119,6 @@ void primAGM(GrafoMatriz *g, char tipo, int valorado) {
 // =========================================================
 // [LETRA F]: DIJKSTRA
 // =========================================================
-
 void imprimirCaminho(int v, int *pred) {
     if (v == -1) return;
     imprimirCaminho(pred[v], pred);
@@ -129,9 +150,8 @@ void Dijkstra(GrafoLista *G, int origem) {
 }
 
 // =========================================================
-// [LETRA G e H]: BUSCAS
+// [LETRA G e H]: BUSCAS (LARGURA E PROFUNDIDADE)
 // =========================================================
-
 void bfs(GrafoMatriz *g, int inicial) {
     int vis[QTD_VERTICES] = {0}, fila[QTD_VERTICES], r = 0, e = 0;
     vis[inicial] = 1; fila[e++] = inicial;
@@ -153,7 +173,6 @@ void dfs(GrafoMatriz *g, int v, int vis[]) {
 // =========================================================
 // MAIN INTEGRADO
 // =========================================================
-
 int main() {
     char arqNome[100];
     int opcao;
@@ -175,7 +194,7 @@ int main() {
         if (!f_novo) return 1;
         fprintf(f_novo, "%c %d %d\n", t, v, n);
 
-        printf("\n--- INSERCAO DE ARESTAS ---\nDigite: origem destino peso (ex: 0 1 15.0)\n");
+        printf("\n--- INSERCAO DE ARESTAS ---\nDigite: origem destino peso\n");
         printf("Para parar, digite: -1 -1\n\n");
 
         int v1, v2; float p;
@@ -198,7 +217,7 @@ int main() {
         scanf("%s", arqNome);
     }
 
-    // Processamento do Arquivo
+    // Leitura e processamento do arquivo de entrada
     FILE *f = fopen(arqNome, "r");
     if (!f) { printf("Erro ao abrir arquivo!\n"); return 1; }
 
@@ -220,20 +239,26 @@ int main() {
     }
     fclose(f);
 
-    // Trecho para mostrar a Matriz na tela (Letra C)
+    // [LETRA C]: Chama a função para salvar a matriz no arquivo formatado
+    salvarMatrizFormato(&GM); 
+
+    // Exibição da Matriz no Terminal (Letra C)
     printf("\n--- [LETRA C] MATRIZ DE ADJACENCIA GERADA ---\n");
     for (int i = 0; i < n_final; i++) {
         for (int j = 0; j < n_final; j++) {
-            printf("%d\t", GM.matriz[i][j]);
+            printf("%d\t", GM.matriz[i][j]); 
         }
         printf("\n");
     }
 
+    printf("\n[OK] Arquivo 'matriz_adjacencia.txt' gerado com sucesso.\n");
+
+    // Solicita o vértice inicial para as buscas e cálculos
     int ini; 
     printf("\nInforme o vertice inicial (0 a %d): ", n_final-1); 
     scanf("%d", &ini);
 
-    // Exibição dos Resultados (Letras C a H)
+    // Executa e mostra as letras D, E, F, G e H
     exibirGraus(&GM, tipo, ini);
     primAGM(&GM, tipo, val);
     Dijkstra(GL, ini);
