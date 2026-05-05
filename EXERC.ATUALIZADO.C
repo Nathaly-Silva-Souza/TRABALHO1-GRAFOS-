@@ -1,0 +1,248 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
+#include <string.h>
+
+#define QTD_VERTICES 20 // Limite seguro para os testes do vídeo
+
+// =========================================================
+// [LETRA A]: DEFINIÇÃO DA ESTRUTURA DE REPRESENTAÇÃO
+// =========================================================
+
+typedef struct noh {
+    int rotulo;
+    int custo;
+    struct noh *prox;
+} Noh;
+
+typedef struct {
+    Noh **A; // Representação por Lista
+    int n;   
+} GrafoLista;
+
+typedef struct {
+    int matriz[QTD_VERTICES][QTD_VERTICES]; // Representação por Matriz
+    int num_vertices; 
+} GrafoMatriz;
+
+GrafoLista* inicializarGrafoLista(int n) {
+    GrafoLista *G = (GrafoLista*)malloc(sizeof(GrafoLista));
+    G->n = n;
+    G->A = (Noh**)malloc(n * sizeof(Noh*));
+    for (int i = 0; i < n; i++) G->A[i] = NULL;
+    return G;
+}
+
+void inicializarMatriz(GrafoMatriz *g, int n) {
+    g->num_vertices = n;
+    for (int i = 0; i < QTD_VERTICES; i++)
+        for (int j = 0; j < QTD_VERTICES; j++)
+            g->matriz[i][j] = 0;
+}
+
+void adicionarArestaLista(GrafoLista *G, int v1, int v2, int peso) {
+    Noh *novo = (Noh*)malloc(sizeof(Noh));
+    novo->rotulo = v2;
+    novo->custo = peso;
+    novo->prox = G->A[v1];
+    G->A[v1] = novo;
+}
+
+// =========================================================
+// [LETRA D]: CÁLCULO DO GRAU DOS VÉRTICES
+// =========================================================
+
+void exibirGraus(GrafoMatriz *g, char tipo, int v) {
+    printf("\n--- [LETRA D] GRAU DO VERTICE %d ---", v);
+    int entrada = 0, saida = 0;
+    for (int i = 0; i < g->num_vertices; i++) {
+        if (g->matriz[v][i] != 0) saida++;
+        if (g->matriz[i][v] != 0) entrada++;
+    }
+    if (tipo == 'D' || tipo == 'd') 
+        printf("\nGrau de Entrada: %d | Grau de Saida: %d\n", entrada, saida);
+    else 
+        printf("\nGrau: %d\n", saida);
+}
+
+// =========================================================
+// [LETRA E]: AGM PRIM
+// =========================================================
+
+void primAGM(GrafoMatriz *g, char tipo, int valorado) {
+    printf("\n--- [LETRA E] ARVORE GERADORA MINIMA (PRIM) ---");
+    if (tipo == 'D' || tipo == 'd' || valorado == 0) {
+        printf("\nOperacao nao aplicavel (Apenas grafos G e valorados).\n");
+        return;
+    }
+    int n = g->num_vertices;
+    int key[QTD_VERTICES], pi[QTD_VERTICES], Q[QTD_VERTICES];
+    for (int u = 0; u < n; u++) { key[u] = INT_MAX; pi[u] = -1; Q[u] = 1; }
+    key[0] = 0;
+    for (int i = 0; i < n; i++) {
+        int u = -1, min = INT_MAX;
+        for (int j = 0; j < n; j++) if (Q[j] && key[j] < min) { min = key[j]; u = j; }
+        if (u == -1) break;
+        Q[u] = 0;
+        for (int v = 0; v < n; v++) {
+            if (g->matriz[u][v] != 0 && Q[v] && g->matriz[u][v] < key[v]) {
+                pi[v] = u; key[v] = g->matriz[u][v];
+            }
+        }
+    }
+    for (int i = 1; i < n; i++) if (pi[i] != -1) printf("\nAresta: %d-%d | Peso: %d", pi[i], i, key[i]);
+    printf("\n");
+}
+
+// =========================================================
+// [LETRA F]: DIJKSTRA
+// =========================================================
+
+void imprimirCaminho(int v, int *pred) {
+    if (v == -1) return;
+    imprimirCaminho(pred[v], pred);
+    printf("%d ", v);
+}
+
+void Dijkstra(GrafoLista *G, int origem) {
+    int dist[QTD_VERTICES], pred[QTD_VERTICES], R[QTD_VERTICES] = {0};
+    int i, v, w, tam_R = 0;
+    for (i = 0; i < G->n; i++) { dist[i] = INT_MAX; pred[i] = -1; }
+    dist[origem] = 0;
+    while (tam_R < G->n) {
+        int min_dist = INT_MAX; v = -1;
+        for (i = 0; i < G->n; i++) if (!R[i] && dist[i] < min_dist) { v = i; min_dist = dist[i]; }
+        if (v == -1) break;
+        R[v] = 1; tam_R++;
+        for (Noh *p = G->A[v]; p != NULL; p = p->prox) {
+            w = p->rotulo;
+            if (!R[w] && dist[v] != INT_MAX && dist[w] > dist[v] + p->custo) {
+                dist[w] = dist[v] + p->custo; pred[w] = v;
+            }
+        }
+    }
+    printf("\n--- [LETRA F] RESULTADOS DIJKSTRA ---\n");
+    for (i = 0; i < G->n; i++) {
+        if (dist[i] == INT_MAX) printf("Vertice %d: Inalcancavel\n", i);
+        else { printf("Vertice %d: Distancia %d | Caminho: ", i, dist[i]); imprimirCaminho(i, pred); printf("\n"); }
+    }
+}
+
+// =========================================================
+// [LETRA G e H]: BUSCAS
+// =========================================================
+
+void bfs(GrafoMatriz *g, int inicial) {
+    int vis[QTD_VERTICES] = {0}, fila[QTD_VERTICES], r = 0, e = 0;
+    vis[inicial] = 1; fila[e++] = inicial;
+    printf("\n--- [LETRA G] BUSCA EM LARGURA (BFS) ---\nOrdem de visita: ");
+    while (r < e) {
+        int u = fila[r++]; printf("%d ", u);
+        for (int i = 0; i < g->num_vertices; i++)
+            if (g->matriz[u][i] != 0 && !vis[i]) { vis[i] = 1; fila[e++] = i; }
+    }
+    printf("\n");
+}
+
+void dfs(GrafoMatriz *g, int v, int vis[]) {
+    vis[v] = 1; printf("%d ", v);
+    for (int i = 0; i < g->num_vertices; i++)
+        if (g->matriz[v][i] != 0 && !vis[i]) dfs(g, i, vis);
+}
+
+// =========================================================
+// MAIN INTEGRADO
+// =========================================================
+
+int main() {
+    char arqNome[100];
+    int opcao;
+
+    printf("=== TRABALHO DE GRAFOS ===\n");
+    printf("1 - Criar Grafo Manualmente (Letra B)\n");
+    printf("2 - Ler Grafo de Arquivo (Letra A)\n");
+    printf("Escolha: ");
+    scanf("%d", &opcao);
+
+    if (opcao == 1) {
+        char t; int v, n, contador = 1;
+        printf("\n--- CONFIGURACAO ---\nTipo [G/D]: "); scanf(" %c", &t);
+        printf("Valorado [0/1]: "); scanf("%d", &v);
+        printf("Qtd Vertices: "); scanf("%d", &n);
+        printf("Nome do arquivo para salvar: "); scanf("%s", arqNome);
+
+        FILE *f_novo = fopen(arqNome, "w");
+        if (!f_novo) return 1;
+        fprintf(f_novo, "%c %d %d\n", t, v, n);
+
+        printf("\n--- INSERCAO DE ARESTAS ---\nDigite: origem destino peso (ex: 0 1 15.0)\n");
+        printf("Para parar, digite: -1 -1\n\n");
+
+        int v1, v2; float p;
+        while (1) {
+            printf("Aresta %d: ", contador);
+            scanf("%d %d", &v1, &v2);
+            if (v1 == -1) break;
+            if (v == 1) {
+                scanf("%f", &p);
+                fprintf(f_novo, "%d %d %.1f\n", v1, v2, p);
+            } else {
+                fprintf(f_novo, "%d %d\n", v1, v2);
+            }
+            contador++;
+        }
+        fclose(f_novo);
+        printf("\n[OK] Arquivo '%s' gerado com sucesso!\n", arqNome);
+    } else {
+        printf("Digite o nome do arquivo (ex: grafo.txt): ");
+        scanf("%s", arqNome);
+    }
+
+    // Processamento do Arquivo
+    FILE *f = fopen(arqNome, "r");
+    if (!f) { printf("Erro ao abrir arquivo!\n"); return 1; }
+
+    char tipo; int val, n_final, v1, v2; float peso_f;
+    fscanf(f, " %c %d %d", &tipo, &val, &n_final);
+
+    GrafoLista *GL = inicializarGrafoLista(n_final);
+    GrafoMatriz GM; inicializarMatriz(&GM, n_final);
+
+    while (fscanf(f, "%d %d", &v1, &v2) != EOF) {
+        int p = 1;
+        if (val == 1) { fscanf(f, "%f", &peso_f); p = (int)peso_f; }
+        adicionarArestaLista(GL, v1, v2, p);
+        GM.matriz[v1][v2] = p;
+        if (tipo == 'G' || tipo == 'g') {
+            adicionarArestaLista(GL, v2, v1, p);
+            GM.matriz[v2][v1] = p;
+        }
+    }
+    fclose(f);
+
+    // Trecho para mostrar a Matriz na tela (Letra C)
+    printf("\n--- [LETRA C] MATRIZ DE ADJACENCIA GERADA ---\n");
+    for (int i = 0; i < n_final; i++) {
+        for (int j = 0; j < n_final; j++) {
+            printf("%d\t", GM.matriz[i][j]);
+        }
+        printf("\n");
+    }
+
+    int ini; 
+    printf("\nInforme o vertice inicial (0 a %d): ", n_final-1); 
+    scanf("%d", &ini);
+
+    // Exibição dos Resultados (Letras C a H)
+    exibirGraus(&GM, tipo, ini);
+    primAGM(&GM, tipo, val);
+    Dijkstra(GL, ini);
+    bfs(&GM, ini);
+    
+    int visDFS[QTD_VERTICES] = {0};
+    printf("\n--- [LETRA H] BUSCA EM PROFUNDIDADE (DFS) ---\nOrdem de visita: ");
+    dfs(&GM, ini, visDFS);
+    printf("\n");
+
+    return 0;
+}
