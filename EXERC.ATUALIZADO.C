@@ -75,17 +75,25 @@ void adicionarArestaLista(GrafoLista *G, int v1, int v2, int peso) {
 // =========================================================
 // [LETRA D]: CÁLCULO DO GRAU DOS VÉRTICES
 // =========================================================
-void exibirGraus(GrafoMatriz *g, char tipo, int v) {
-    printf("\n--- [LETRA D] GRAU DO VERTICE %d ---", v);
-    int entrada = 0, saida = 0;
-    for (int i = 0; i < g->num_vertices; i++) {
-        if (g->matriz[v][i] != 0) saida++;
-        if (g->matriz[i][v] != 0) entrada++;
+void exibirGraus(GrafoMatriz *g, char tipo) {
+    printf("\n--- [LETRA D] CALCULO DO GRAU DE CADA VERTICE ---");
+    
+    for (int v = 0; v < g->num_vertices; v++) {
+        int entrada = 0, saida = 0;
+        
+        for (int i = 0; i < g->num_vertices; i++) {
+            if (g->matriz[v][i] != 0) saida++;
+            if (g->matriz[i][v] != 0) entrada++;
+        }
+
+        if (tipo == 'D' || tipo == 'd') {
+            printf("\nVertice %d -> Grau de Entrada: %d | Grau de Saida: %d", v, entrada, saida);
+        } else {
+            // Em grafos não dirigidos, entrada e saída são iguais ao grau
+            printf("\nVertice %d -> Grau: %d", v, saida);
+        }
     }
-    if (tipo == 'D' || tipo == 'd') 
-        printf("\nGrau de Entrada: %d | Grau de Saida: %d\n", entrada, saida);
-    else 
-        printf("\nGrau: %d\n", saida);
+    printf("\n");
 }
 
 // =========================================================
@@ -93,36 +101,39 @@ void exibirGraus(GrafoMatriz *g, char tipo, int v) {
 // =========================================================
 void primAGM(GrafoMatriz *g, char tipo, int valorado) {
     printf("\n--- [LETRA E] ARVORE GERADORA MINIMA (PRIM) ---");
-    if (tipo == 'D' || tipo == 'd' || valorado == 0) {
-        printf("\nOperacao nao aplicavel (Apenas grafos G e valorados).\n");
-        return;
-    }
-    int n = g->num_vertices;
-    int key[QTD_VERTICES], pi[QTD_VERTICES], Q[QTD_VERTICES];
-    for (int u = 0; u < n; u++) { key[u] = INT_MAX; pi[u] = -1; Q[u] = 1; }
+    if (tipo == 'D' || tipo == 'd' || valorado == 0) { printf("\nOperacao nao aplicavel.\n"); return; }
+
+    int n = g->num_vertices, key[QTD_VERTICES], pi[QTD_VERTICES], Q[QTD_VERTICES], custo = 0;
+    int ordem[QTD_VERTICES], c = 0; // 'c' é o contador da ordem
+
+    for (int i = 0; i < n; i++) { key[i] = INT_MAX; pi[i] = -1; Q[i] = 1; }
     key[0] = 0;
+
     for (int i = 0; i < n; i++) {
         int u = -1, min = INT_MAX;
         for (int j = 0; j < n; j++) if (Q[j] && key[j] < min) { min = key[j]; u = j; }
         if (u == -1) break;
-        Q[u] = 0;
-        for (int v = 0; v < n; v++) {
-            if (g->matriz[u][v] != 0 && Q[v] && g->matriz[u][v] < key[v]) {
-                pi[v] = u; key[v] = g->matriz[u][v];
-            }
-        }
+        Q[u] = 0; ordem[c++] = u; 
+        if (pi[u] != -1) custo += g->matriz[pi[u]][u];
+        for (int v = 0; v < n; v++)
+            if (g->matriz[u][v] && Q[v] && g->matriz[u][v] < key[v]) { pi[v] = u; key[v] = g->matriz[u][v]; }
     }
-    for (int i = 1; i < n; i++) if (pi[i] != -1) printf("\nAresta: %d-%d | Peso: %d", pi[i], i, key[i]);
-    printf("\n");
-}
 
+    printf("\nCaminho: ");
+    for (int i = 0; i < c; i++) printf("%d%s", ordem[i], (i == c-1 ? "" : " -> "));
+    
+    printf("\n\nArestas Selecionadas:");
+    for (int i = 1; i < n; i++) if (pi[i] != -1) printf("\n  %d-%d | Peso: %d", pi[i], i, g->matriz[pi[i]][i]);
+    printf("\n\nSOMA TOTAL (AGM) = %d\n", custo);
+}
 // =========================================================
 // [LETRA F]: DIJKSTRA
 // =========================================================
-void imprimirCaminho(int v, int *pred) {
+void imprimirCaminho(int v, int *pred, int origem) {
     if (v == -1) return;
-    imprimirCaminho(pred[v], pred);
-    printf("%d ", v);
+    imprimirCaminho(pred[v], pred, origem);
+    // Imprime a seta apenas se não for o vértice de origem
+    printf("%s%d", (v == origem ? "" : " -> "), v);
 }
 
 void Dijkstra(GrafoLista *G, int origem) {
@@ -145,7 +156,11 @@ void Dijkstra(GrafoLista *G, int origem) {
     printf("\n--- [LETRA F] RESULTADOS DIJKSTRA ---\n");
     for (i = 0; i < G->n; i++) {
         if (dist[i] == INT_MAX) printf("Vertice %d: Inalcancavel\n", i);
-        else { printf("Vertice %d: Distancia %d | Caminho: ", i, dist[i]); imprimirCaminho(i, pred); printf("\n"); }
+        else { 
+            printf("Destino %d: Distancia Minima = %d | Caminho: ", i, dist[i]); 
+            imprimirCaminho(i, pred, origem); 
+            printf("\n"); 
+        }
     }
 }
 
@@ -259,7 +274,7 @@ int main() {
     scanf("%d", &ini);
 
     // Executa e mostra as letras D, E, F, G e H
-    exibirGraus(&GM, tipo, ini);
+    exibirGraus(&GM, tipo);
     primAGM(&GM, tipo, val);
     Dijkstra(GL, ini);
     bfs(&GM, ini);
