@@ -6,9 +6,9 @@
 #define QTD_VERTICES 20 
 
 // =========================================================
-// [LETRA A]: DEFINIÇÃO DAS ESTRUTURAS
+// [LETRA A]:
 // =========================================================
-
+// Estruturas para Lista de Adjacência e Matriz
 typedef struct noh {
     int rotulo;
     int custo;
@@ -26,10 +26,9 @@ typedef struct {
 } GrafoMatriz;
 
 // =========================================================
-// [LETRA C]: SALVAR MATRIZ (ESTRUTURADA EM LINHAS E COLUNAS)
+// [LETRA C]: SALVAR MATRIZ TXT
 // =========================================================
-// Esta função grava a matriz no arquivo .txt respeitando o formato
-// visual de tabela solicitado na imagem do enunciado.
+// Grava a matriz de adjacência em arquivo .txt
 void salvarMatrizFormato(GrafoMatriz *g) {
     FILE *f_mat = fopen("matriz_adjacencia.txt", "w");
     if (!f_mat) return;
@@ -39,16 +38,16 @@ void salvarMatrizFormato(GrafoMatriz *g) {
             // Salva o peso e um espaço
             fprintf(f_mat, "%d ", g->matriz[i][j]);
         }
-        // AO FINAL DE CADA LINHA: Pula para a próxima no arquivo
+        //Ao final de cada linha eu pulo para a próxima no arquivo
         fprintf(f_mat, "\n"); 
     }
     fclose(f_mat);
 }
 
 // =========================================================
-// FUNÇÕES DE INICIALIZAÇÃO E APOIO
+// FUNÇÕES 
 // =========================================================
-
+// Aloca memória e limpa a lista de adjacência
 GrafoLista* inicializarGrafoLista(int n) {
     GrafoLista *G = (GrafoLista*)malloc(sizeof(GrafoLista));
     G->n = n;
@@ -57,6 +56,7 @@ GrafoLista* inicializarGrafoLista(int n) {
     return G;
 }
 
+// Define o tamanho e zera todos os pesos da matriz
 void inicializarMatriz(GrafoMatriz *g, int n) {
     g->num_vertices = n;
     for (int i = 0; i < QTD_VERTICES; i++)
@@ -64,6 +64,7 @@ void inicializarMatriz(GrafoMatriz *g, int n) {
             g->matriz[i][j] = 0;
 }
 
+// Insere um novo nó com peso na lista de adjacência
 void adicionarArestaLista(GrafoLista *G, int v1, int v2, int peso) {
     Noh *novo = (Noh*)malloc(sizeof(Noh));
     novo->rotulo = v2;
@@ -75,6 +76,7 @@ void adicionarArestaLista(GrafoLista *G, int v1, int v2, int peso) {
 // =========================================================
 // [LETRA D]: CÁLCULO DO GRAU DOS VÉRTICES
 // =========================================================
+// Calcula e exibe o grau de entrada/saída de cada vértice
 void exibirGraus(GrafoMatriz *g, char tipo) {
     printf("\n--- [LETRA D] CALCULO DO GRAU DE CADA VERTICE ---");
     
@@ -89,7 +91,7 @@ void exibirGraus(GrafoMatriz *g, char tipo) {
         if (tipo == 'D' || tipo == 'd') {
             printf("\nVertice %d -> Grau de Entrada: %d | Grau de Saida: %d", v, entrada, saida);
         } else {
-            // Em grafos não dirigidos, entrada e saída são iguais ao grau
+            // Grafos não dirigidos: entrada e saída são iguais ao grau
             printf("\nVertice %d -> Grau: %d", v, saida);
         }
     }
@@ -99,12 +101,14 @@ void exibirGraus(GrafoMatriz *g, char tipo) {
 // =========================================================
 // [LETRA E]: AGM PRIM
 // =========================================================
+// Algoritmo de Prim para encontrar a Árvore Geradora Mínima
+
 void primAGM(GrafoMatriz *g, char tipo, int valorado) {
     printf("\n--- [LETRA E] ARVORE GERADORA MINIMA (PRIM) ---");
     if (tipo == 'D' || tipo == 'd' || valorado == 0) { printf("\nOperacao nao aplicavel.\n"); return; }
 
     int n = g->num_vertices, key[QTD_VERTICES], pi[QTD_VERTICES], Q[QTD_VERTICES], custo = 0;
-    int ordem[QTD_VERTICES], c = 0; // 'c' é o contador da ordem
+    int ordem[QTD_VERTICES], c = 0; // c é o contador da ordem
 
     for (int i = 0; i < n; i++) { key[i] = INT_MAX; pi[i] = -1; Q[i] = 1; }
     key[0] = 0;
@@ -129,6 +133,7 @@ void primAGM(GrafoMatriz *g, char tipo, int valorado) {
 // =========================================================
 // [LETRA F]: DIJKSTRA
 // =========================================================
+// Função auxiliar recursiva para imprimir o caminho do Dijkstra
 void imprimirCaminho(int v, int *pred, int origem) {
     if (v == -1) return;
     imprimirCaminho(pred[v], pred, origem);
@@ -136,6 +141,7 @@ void imprimirCaminho(int v, int *pred, int origem) {
     printf("%s%d", (v == origem ? "" : " -> "), v);
 }
 
+// [LETRA F]: Algoritmo de Dijkstra para caminhos mínimos de uma origem
 void Dijkstra(GrafoLista *G, int origem) {
     int dist[QTD_VERTICES], pred[QTD_VERTICES], R[QTD_VERTICES] = {0};
     int i, v, w, tam_R = 0;
@@ -167,6 +173,7 @@ void Dijkstra(GrafoLista *G, int origem) {
 // =========================================================
 // [LETRA G e H]: BUSCAS (LARGURA E PROFUNDIDADE)
 // =========================================================
+// [LETRA G]: Percorre o grafo em largura usando uma fila
 void bfs(GrafoMatriz *g, int inicial) {
     int vis[QTD_VERTICES] = {0}, fila[QTD_VERTICES], r = 0, e = 0;
     vis[inicial] = 1; fila[e++] = inicial;
@@ -179,6 +186,7 @@ void bfs(GrafoMatriz *g, int inicial) {
     printf("\n");
 }
 
+// [LETRA H]: Percorre o grafo em profundidade de forma recursiva
 void dfs(GrafoMatriz *g, int v, int vis[]) {
     vis[v] = 1; printf("%d ", v);
     for (int i = 0; i < g->num_vertices; i++)
